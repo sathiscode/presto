@@ -34,6 +34,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -46,6 +48,8 @@ import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_REAL;
 import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_SMALLINT;
 import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_TIME;
 import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_TIMESTAMP;
+import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_TIMESTAMP_WITH_TIMEZONE;
+import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_TIME_WITH_TIMEZONE;
 import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_TINYINT;
 import static com.facebook.presto.plugin.jdbc.TestingJdbcTypeHandle.JDBC_VARCHAR;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
@@ -56,7 +60,9 @@ import static com.facebook.presto.spi.type.IntegerType.INTEGER;
 import static com.facebook.presto.spi.type.RealType.REAL;
 import static com.facebook.presto.spi.type.SmallintType.SMALLINT;
 import static com.facebook.presto.spi.type.TimeType.TIME;
+import static com.facebook.presto.spi.type.TimeWithTimeZoneType.TIME_WITH_TIME_ZONE;
 import static com.facebook.presto.spi.type.TimestampType.TIMESTAMP;
+import static com.facebook.presto.spi.type.TimestampWithTimeZoneType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.facebook.presto.spi.type.TinyintType.TINYINT;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static io.airlift.slice.Slices.utf8Slice;
@@ -92,7 +98,9 @@ public class TestJdbcQueryBuilder
                 new JdbcColumnHandle("test_id", "col_7", JDBC_TINYINT, TINYINT),
                 new JdbcColumnHandle("test_id", "col_8", JDBC_SMALLINT, SMALLINT),
                 new JdbcColumnHandle("test_id", "col_9", JDBC_INTEGER, INTEGER),
-                new JdbcColumnHandle("test_id", "col_10", JDBC_REAL, REAL));
+                new JdbcColumnHandle("test_id", "col_10", JDBC_REAL, REAL),
+                new JdbcColumnHandle("test_id", "col_11", JDBC_TIME_WITH_TIMEZONE, TIME_WITH_TIME_ZONE),
+                new JdbcColumnHandle("test_id", "col_12", JDBC_TIMESTAMP_WITH_TIMEZONE, TIMESTAMP_WITH_TIME_ZONE));
 
         Connection connection = database.getConnection();
         try (PreparedStatement preparedStatement = connection.prepareStatement("create table \"test_table\" (" + "" +
@@ -107,6 +115,8 @@ public class TestJdbcQueryBuilder
                 "\"col_8\" SMALLINT, " +
                 "\"col_9\" INTEGER, " +
                 "\"col_10\" REAL " +
+                "\"col_11\" TIME_WITH_TIME_ZONE " +
+                "\"col_12\" TIMESTAMP_WITH_TIME_ZONE " +
                 ")")) {
             preparedStatement.execute();
             StringBuilder stringBuilder = new StringBuilder("insert into \"test_table\" values ");
@@ -115,7 +125,7 @@ public class TestJdbcQueryBuilder
             for (int i = 0; i < len; i++) {
                 stringBuilder.append(format(
                         Locale.ENGLISH,
-                        "(%d, %f, %b, 'test_str_%d', '%s', '%s', '%s', %d, %d, %d, %f)",
+                        "(%d, %f, %b, 'test_str_%d', '%s', '%s', '%s', %d, %d, %d, %f, '%s', '%s')",
                         i,
                         200000.0 + i / 2.0,
                         i % 2 == 0,
@@ -126,7 +136,9 @@ public class TestJdbcQueryBuilder
                         i % 128,
                         -i,
                         i - 100,
-                        100.0f + i));
+                        100.0f + i,
+                        OffsetTime.of(dateTime),
+                        ZonedDateTime.of(dateTime)));
                 dateTime = dateTime.plusHours(26);
                 if (i != len - 1) {
                     stringBuilder.append(",");
